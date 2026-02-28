@@ -16,18 +16,30 @@ export async function POST(req: Request) {
         }
 
         const ingredientList = room.ingredients.map((i: any) => i.name).join(", ");
+        const { dietary, allergies, timeLimit } = room.constraints || {};
 
-        // 2. Generate 3 Recipes using Llama 3.3
-        const prompt = `Act as a Michelin-star chef. Create 3 distinct recipes using: ${ingredientList}.
-        You MUST return a JSON object with EXACTLY this structure:
-        {
-          "recipes": [
-            { "title": "Recipe Name", "description": "Short catchy description", "steps": ["step 1", "step 2"], "prepTime": "20 mins" },
-            { "title": "Recipe Name", "description": "...", "steps": ["...", "..."], "prepTime": "..." },
-            { "title": "Recipe Name", "description": "...", "steps": ["...", "..."], "prepTime": "..." }
-          ]
-        }`;
+        // 2. Enhanced Prompt for Version 1.2
+        const prompt = `Act as a Michelin-star chef. 
+Create 3 distinct recipes using primarily these ingredients: ${ingredientList}.
 
+CRITICAL SAFETY & PREFERENCE CONSTRAINTS:
+- Dietary Restrictions: ${dietary || "None"}
+- Allergies (STRICTLY AVOID): ${allergies || "None"}
+- Maximum Preparation Time: ${timeLimit || "60"} minutes
+
+Guidelines:
+1. If an allergy is specified, do not use that ingredient or any common derivatives.
+2. Ensure the recipes can actually be completed within ${timeLimit || "60"} minutes.
+3. Respect the ${dietary} lifestyle (e.g., if Vegan, do not suggest dairy or meat).
+
+You MUST return a JSON object with EXACTLY this structure:
+{
+  "recipes": [
+    { "title": "Recipe Name", "description": "Short catchy description", "steps": ["step 1", "step 2"], "prepTime": "20 mins" },
+    { "title": "Recipe Name", "description": "...", "steps": ["...", "..."], "prepTime": "..." },
+    { "title": "Recipe Name", "description": "...", "steps": ["...", "..."], "prepTime": "..." }
+  ]
+}`;
         const chatCompletion = await groq.chat.completions.create({
             messages: [{ role: "user", content: prompt }],
             model: "llama-3.3-70b-versatile",

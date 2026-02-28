@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Send, Sparkles, Plus, Users, Lock } from "lucide-react";
+import { Send, Sparkles, Plus, Users, Lock, ShieldAlert, Clock, Leaf, Info, Loader2 } from "lucide-react";
 import { pusherClient } from "@/lib/pusher-client";
 import RecipeCard from "./RecipeCard";
 import VotingStage from "./VotingStage";
@@ -16,12 +16,13 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
     const [recipeOptions, setRecipeOptions] = useState<any[]>([]);
     const [winningRecipe, setWinningRecipe] = useState<any>(null);
 
-    // Inside IngredientSection.tsx
+    // NEW: State for Kitchen Rules (Constraints)
+    const [constraints, setConstraints] = useState<any>(null);
+
     useEffect(() => {
         const channel = pusherClient.subscribe(`room-${roomId}`);
 
         const handleRecipeFinalized = (data: any) => {
-            console.log("WINNER EVENT DETECTED", data);
             if (data) {
                 setWinningRecipe(data);
                 setView("cooking");
@@ -29,7 +30,6 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
         };
 
         const handleVotingStarted = (data: any) => {
-            console.log("PUSHER RECEIVED:", data);
             const recipesArray = Array.isArray(data) ? data : (data.recipes || data.recipeOptions);
             if (Array.isArray(recipesArray) && recipesArray.length > 0) {
                 setRecipeOptions(recipesArray);
@@ -47,21 +47,25 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
         channel.bind("ingredient-added", handleIngredientAdded);
 
         return () => {
-            // Clean up individual bindings gracefully
             channel.unbind("recipe-finalized", handleRecipeFinalized);
             channel.unbind("voting-started", handleVotingStarted);
             channel.unbind("ingredient-added", handleIngredientAdded);
-
-            // ONLY unsubscribe when the entire page closes
             pusherClient.unsubscribe(`room-${roomId}`);
         };
     }, [roomId]);
 
+    // Enhanced Sync: Fetching status AND constraints
     useEffect(() => {
-
         const syncRoomState = async () => {
-            const res = await fetch(`/api/room/status?roomId=${roomId}`);
+            const res = await fetch(`/api/room/status?roomId=${roomId}`, {
+                cache: "no-store"
+            });
             const data = await res.json();
+            console.log(data)
+            // Set constraints for the Kitchen Rules banner
+            if (data.constraints) {
+                setConstraints(data.constraints);
+            }
 
             if (data.status === "voting" && data.recipes) {
                 setRecipeOptions(data.recipes);
@@ -74,6 +78,8 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
 
         if (isJoined) syncRoomState();
     }, [roomId, isJoined]);
+
+    console.log("CTRNSSSS", constraints)
 
     const addIngredient = async () => {
         if (!input.trim()) return;
@@ -101,9 +107,6 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
         }
     };
 
-    console.log(view)
-
-    // 1. STEP ONE: ENTER NAME (The Onboarding)
     if (!isJoined) {
         return (
             <div className="mt-20 max-w-md mx-auto p-8 bg-white rounded-3xl shadow-xl border border-stone-100 text-center">
@@ -129,7 +132,6 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
         );
     }
 
-    // 2. STEP TWO: VOTING STAGE
     if (view === "voting") {
         return <VotingStage roomId={roomId} initialRecipes={recipeOptions} />;
     }
@@ -142,7 +144,6 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
         );
     }
 
-    // 4. STEP FOUR: LOBBY (Adding ingredients)
     return (
         <div className="mt-8 max-w-lg mx-auto w-full px-4 pb-20">
             {/* Header showing current user */}
@@ -150,6 +151,36 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 Cooking as <span className="text-stone-800 font-bold">{userName}</span>
             </div>
+
+            {/* NEW: Kitchen Rules Banner */}
+            {constraints && (
+                <div className="bg-orange-50/50 border border-orange-100 rounded-3xl p-5 mb-8 animate-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Info size={16} className="text-orange-600" />
+                        <h3 className="text-[10px] font-black text-stone-900 uppercase tracking-widest">Kitchen Rules</h3>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="bg-white p-3 rounded-2xl shadow-sm border border-orange-100/50">
+                            <Leaf size={14} className="text-green-500 mb-1" />
+                            <p className="text-[8px] font-black text-stone-400 uppercase tracking-tighter">Diet</p>
+                            <p className="text-[11px] font-bold text-stone-700 truncate">{constraints.dietary || "None"}</p>
+                        </div>
+
+                        <div className="bg-white p-3 rounded-2xl shadow-sm border border-orange-100/50">
+                            <ShieldAlert size={14} className="text-red-500 mb-1" />
+                            <p className="text-[8px] font-black text-stone-400 uppercase tracking-tighter">Allergy</p>
+                            <p className="text-[11px] font-bold text-stone-700 truncate">{constraints.allergies || "None"}</p>
+                        </div>
+
+                        <div className="bg-white p-3 rounded-2xl shadow-sm border border-orange-100/50">
+                            <Clock size={14} className="text-blue-500 mb-1" />
+                            <p className="text-[8px] font-black text-stone-400 uppercase tracking-tighter">Time</p>
+                            <p className="text-[11px] font-bold text-stone-700 truncate">{constraints.timeLimit || "30"}m</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="flex gap-2 mb-8 group">
                 <input
@@ -167,7 +198,7 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
 
             <div className="space-y-3 mb-8">
                 {ingredients.map((ing, idx) => (
-                    <div key={idx} className="p-4 bg-white border border-stone-100 rounded-2xl shadow-sm flex justify-between items-center">
+                    <div key={idx} className="p-4 bg-white border border-stone-100 rounded-2xl shadow-sm flex justify-between items-center animate-in zoom-in-95 duration-300">
                         <span className="font-semibold text-stone-800">{ing.name}</span>
                         <span className="text-[10px] uppercase tracking-widest text-orange-500 font-black bg-orange-50 px-3 py-1 rounded-lg">
                             Chef {ing.addedBy}
@@ -181,7 +212,11 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
                 disabled={isGenerating || ingredients.length === 0}
                 className="w-full py-5 bg-stone-900 text-white rounded-2xl font-black text-lg hover:bg-orange-600 disabled:bg-stone-200 transition-all shadow-xl flex items-center justify-center gap-3"
             >
-                {isGenerating ? "Llama is creating options..." : "Create 3 Recipes to Vote ✨"}
+                {isGenerating ? (
+                    <><Loader2 className="animate-spin" /> Llama is creating options...</>
+                ) : (
+                    <><Sparkles size={20} /> Create 3 Recipes to Vote ✨</>
+                )}
             </button>
         </div>
     );
