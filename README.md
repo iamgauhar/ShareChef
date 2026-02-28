@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍳 ShareChef (v1.1)
+Collaborative AI-Powered Cooking Experience
 
-## Getting Started
+ShareChef is a real-time NEXT.JS application that allows groups of friends to brainstorm meals together. Users contribute ingredients in a live lobby, an AI generates unique recipes based on those inputs, and the group votes on the winner in real-time.
 
-First, run the development server:
+# 🚀 Key Features
+Authenticated Hosting & Dashboard
+Google OAuth 2.0: Secure login for room creators using NextAuth.js.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Personal Kitchen History: A private dashboard for logged-in users to manage past rooms.
+
+Data Control: Full CRUD capabilities allowing creators to delete expired or test rooms from MongoDB.
+
+Secured Collaborative Rooms
+Password Protection: Every room is encrypted with a unique password set by the host.
+
+Anonymous Guest Access: Friends can join via Room ID and Password without needing an account.
+
+Direct Link Gatekeeper: Shared URLs are protected by a password-entry screen.
+
+Real-Time Interaction & AI
+Live Lobby: Instant ingredient syncing across all clients using Pusher.
+
+AI Chef (Llama 3.3): Generates 3 distinct recipes with instructions and prep times via the Groq SDK.
+
+Interactive Voting: Real-time leaderboard that highlights the crowd favorite as votes come in.
+
+# 🛠️ Tech Stack
+Frontend: Next.js 15 (App Router), Tailwind CSS, Lucide React.
+
+Backend: Node.js, Next.js API Routes.
+
+Database: MongoDB Atlas with Mongoose & Native Driver.
+
+Real-time: Pusher Channels.
+
+AI: Llama 3.3 (via Groq Cloud).
+
+Auth: NextAuth.js (Auth.js).
+
+# 📦 Installation & Setup
+Clone the repository
+
+Bash
+git clone https://github.com/iamgauhar/sharechef.git
+cd sharechef
+Install dependencies
+
+Bash
+npm install
+Environment Variables
+### 🔑 Environment Variables
+Create a `.env.local` file in the root directory and add the following:
+
+```env
+# Database & AI
+MONGODB_URI=your_mongodb_uri
+GROQ_API_KEY=your_groq_key
+
+# Pusher (Real-time)
+NEXT_PUBLIC_PUSHER_KEY=your_key
+PUSHER_APP_ID=your_id
+PUSHER_SECRET=your_secret
+PUSHER_CLUSTER=your_cluster
+
+# Authentication
+NEXTAUTH_SECRET=your_node_generated_secret
+NEXTAUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=your_google_id
+GOOGLE_CLIENT_SECRET=your_google_secret
 ```
+# Bash
+```npm run dev```
+🏗️ Architecture Overview
+The application follows a modern serverless architecture using Next.js. To ensure high data consistency during rapid real-time updates (like voting), the backend utilizes the Mongoose for structured data modeling.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+🌐 Deployment
+The project is optimized for deployment on Netlify or Vercel.
+Current Live Version: https://sharechef.iamgauhar.in.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Developed by Gauhar Software Engineer | MERN Stack Developer
