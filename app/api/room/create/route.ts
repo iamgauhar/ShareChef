@@ -7,7 +7,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 export async function POST(req: Request) {
     try {
         // 1. Get password and creator info from request
-        const { password, creatorName } = await req.json();
+        const { password, creatorEmail } = await req.json();
 
         // 2. Authentication Check (Future Proofing for Version 1.1)
         // const session = await getServerSession(); 
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
         const newRoomData = {
             roomId,
             password, // Guest will use this to join
-            owner: creatorName || "Authorized Chef", // Track who created it
+            owner: creatorEmail, // Track who created it
             ingredients: [],
             recipes: [],
             status: "lobby",

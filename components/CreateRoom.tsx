@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Lock, ChefHat, Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 export default function CreateRoomForm() {
+    const { data: session } = useSession();
     const [password, setPassword] = useState("");
     const [creatorName, setCreatorName] = useState("");
     const [loading, setLoading] = useState(false);
@@ -18,7 +20,7 @@ export default function CreateRoomForm() {
             const res = await fetch("/api/room/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password, creatorName }),
+                body: JSON.stringify({ password, creatorName, creatorEmail: session?.user?.email }),
             });
 
             const data = await res.json();
