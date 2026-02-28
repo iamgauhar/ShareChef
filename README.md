@@ -1,4 +1,4 @@
-# 🍳 ShareChef (v1.1)
+# ![Alt text](https://sharechef.iamgauhar.in/utensils-crossed.svg) ShareChef
 Collaborative AI-Powered Cooking Experience
 
 ShareChef is a real-time NEXT.JS application that allows groups of friends to brainstorm meals together. Users contribute ingredients in a live lobby, an AI generates unique recipes based on those inputs, and the group votes on the winner in real-time.
