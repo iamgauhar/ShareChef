@@ -22,6 +22,8 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
     const [recipeOptions, setRecipeOptions] = useState<any[]>([]);
     const [winningRecipe, setWinningRecipe] = useState<any>(null);
     const [constraints, setConstraints] = useState<any>(null);
+    const [isHost, setIsHost] = useState(false);
+    const currentVoterId = session?.user?.email || userName;
 
     useEffect(() => {
         const channel = pusherClient.subscribe(`room-${roomId}`);
@@ -75,6 +77,7 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
                 if (session?.user?.email && session.user.email === data.owner) {
                     setUserName(session.user.name || "Host");
                     setIsJoined(true);
+                    setIsHost(true);
                 }
 
                 if (data.status === "voting" && data.recipes) {
@@ -160,7 +163,7 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
     }
 
     if (view === "voting") {
-        return <VotingStage roomId={roomId} initialRecipes={recipeOptions} />;
+        return <VotingStage roomId={roomId} initialRecipes={recipeOptions} voterId={currentVoterId} isHost={isHost} />;
     }
 
     if (view === "cooking" && winningRecipe) {

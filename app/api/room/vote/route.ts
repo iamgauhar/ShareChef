@@ -1,44 +1,48 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Room from "@/models/Room";
+// import { pusherServer } from "@/lib/pusher-server";
 import { pusherServer } from "@/lib/pusher";
 
 export async function POST(req: Request) {
     try {
-        const { roomId, recipeTitle } = await req.json();
-        await connectToDatabase();
+        const { roomId, recipeIndex, voterId } = await req.json();
 
-        // 1. Direct MongoDB Update to ensure it finds the nested recipe title
-        const updateResult = await Room.collection.findOneAndUpdate(
-            {
-                roomId: roomId,
-                "recipes.title": recipeTitle
-            },
-            {
-                $inc: { "recipes.$.votes": 1 }
-            },
-            { returnDocument: 'after' } // Returns the updated document
-        );
-
-        // In the MongoDB driver, the document is inside 'value' or it's the object itself
-        const updatedRoom = updateResult;
-
-        if (!updatedRoom) {
-            console.error("VOTE FAILED: Room or Recipe Title not found", { roomId, recipeTitle });
-            return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+        if (!voterId) {
+            return NextResponse.json({ error: "Voter ID required" }, { status: 400 });
         }
 
-        // 2. Broadcast the updated recipes to everyone in the room
-        await pusherServer.trigger(`room-${roomId}`, "vote-updated", updatedRoom.recipes);
+        await connectToDatabase();
+        const room = await Room.findOne({ roomId });
 
-        console.log(`✅ Vote registered for: ${recipeTitle} in Room: ${roomId}`);
-        return NextResponse.json(updatedRoom.recipes);
+        if (!room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
 
-    } catch (error: any) {
-        console.error("VOTE API CRASHED:", error.message);
-        return NextResponse.json({
-            error: "Server Error",
-            details: error.message
-        }, { status: 500 });
+        // 1. Map through recipes to clear any previous votes from this user
+        const updatedRecipes = room.recipes.map((recipe: any) => {
+            // Ensure votes is an array
+            const currentVotes = Array.isArray(recipe.votes) ? recipe.votes : [];
+
+            // Remove the voterId from ALL recipes to reset their state
+            const filteredVotes = currentVotes.filter((id: string) => id !== voterId);
+
+            return { ...recipe, votes: filteredVotes };
+        });
+
+        // 2. Add the user's vote to the newly selected recipe
+        updatedRecipes[recipeIndex].votes.push(voterId);
+
+        // 3. Save the exact updated array to MongoDB
+        await Room.updateOne(
+            { roomId },
+            { $set: { recipes: updatedRecipes } }
+        );
+
+        // 4. Trigger Pusher so everyone sees the updated vote counts live
+        await pusherServer.trigger(`room-${roomId}`, "vote-updated", updatedRecipes);
+
+        return NextResponse.json({ success: true, recipes: updatedRecipes });
+    } catch (error) {
+        console.error("Voting API Error:", error);
+        return NextResponse.json({ error: "Failed to cast vote" }, { status: 500 });
     }
 }
