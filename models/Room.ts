@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 
 const RoomSchema = new mongoose.Schema({
     roomId: { type: String, required: true, unique: true },
-    password: { type: String, default: "" },
+    password: { type: String, required: true },
+    owner: { type: String, required: true },
     status: { type: String, default: "lobby" },
     ingredients: [
         {
