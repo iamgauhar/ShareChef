@@ -30,7 +30,7 @@ Frontend: Next.js 15 (App Router), Tailwind CSS, Lucide React.
 
 Backend: Node.js, Next.js API Routes.
 
-Database: MongoDB Atlas with Mongoose & Native Driver.
+Database: MongoDB Atlas with Mongoose.
 
 Real-time: Pusher Channels.
 
@@ -75,7 +75,7 @@ GOOGLE_CLIENT_SECRET=your_google_secret
 The application follows a modern serverless architecture using Next.js. To ensure high data consistency during rapid real-time updates (like voting), the backend utilizes the Mongoose for structured data modeling.
 
 🌐 Deployment
-The project is optimized for deployment on Netlify or Vercel.
+The project is optimized for deployment on Netlify with custom domain.
 Current Live Version: https://sharechef.iamgauhar.in.
 
 Developed by Gauhar Software Engineer | MERN Stack Developer
