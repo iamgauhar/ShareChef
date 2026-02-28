@@ -3,21 +3,27 @@
 import { useEffect, useState } from "react";
 import { Send, Sparkles, Plus, Users, Lock, ShieldAlert, Clock, Leaf, Info, Loader2 } from "lucide-react";
 import { pusherClient } from "@/lib/pusher-client";
+import { useSession } from "next-auth/react"; // 1. Added NextAuth import
 import RecipeCard from "./RecipeCard";
 import VotingStage from "./VotingStage";
 
 export default function IngredientSection({ roomId }: { roomId: string }) {
+    // 2. Extract session data and loading status
+    const { data: session, status: sessionStatus } = useSession();
+
     const [userName, setUserName] = useState("");
     const [isJoined, setIsJoined] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(true); // 3. Prevents UI flashing
+
     const [ingredients, setIngredients] = useState<any[]>([]);
     const [input, setInput] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [view, setView] = useState<"lobby" | "voting" | "cooking">("lobby");
     const [recipeOptions, setRecipeOptions] = useState<any[]>([]);
     const [winningRecipe, setWinningRecipe] = useState<any>(null);
-
-    // NEW: State for Kitchen Rules (Constraints)
     const [constraints, setConstraints] = useState<any>(null);
+    const [isHost, setIsHost] = useState(false);
+    const currentVoterId = session?.user?.email || userName;
 
     useEffect(() => {
         const channel = pusherClient.subscribe(`room-${roomId}`);
@@ -54,32 +60,46 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
         };
     }, [roomId]);
 
-    // Enhanced Sync: Fetching status AND constraints
+    // Enhanced Sync: Fetching status AND Auto-Joining the Host
     useEffect(() => {
         const syncRoomState = async () => {
-            const res = await fetch(`/api/room/status?roomId=${roomId}`, {
-                cache: "no-store"
-            });
-            const data = await res.json();
-            console.log(data)
-            // Set constraints for the Kitchen Rules banner
-            if (data.constraints) {
-                setConstraints(data.constraints);
-            }
+            try {
+                const res = await fetch(`/api/room/status?roomId=${roomId}`, {
+                    cache: "no-store"
+                });
+                const data = await res.json();
 
-            if (data.status === "voting" && data.recipes) {
-                setRecipeOptions(data.recipes);
-                setView("voting");
-            } else if (data.status === "completed" && data.winner) {
-                setWinningRecipe(data.winner);
-                setView("cooking");
+                if (data.constraints) {
+                    setConstraints(data.constraints);
+                }
+
+                // 4. THE MAGIC: If logged-in user matches the room owner, auto-join them!
+                if (session?.user?.email && session.user.email === data.owner) {
+                    setUserName(session.user.name || "Host");
+                    setIsJoined(true);
+                    setIsHost(true);
+                }
+
+                if (data.status === "voting" && data.recipes) {
+                    setRecipeOptions(data.recipes);
+                    setView("voting");
+                } else if (data.status === "completed" && data.winner) {
+                    setWinningRecipe(data.winner);
+                    setView("cooking");
+                }
+            } catch (error) {
+                console.error("Failed to sync room data", error);
+            } finally {
+                // Done checking the database and session
+                setIsInitializing(false);
             }
         };
 
-        if (isJoined) syncRoomState();
-    }, [roomId, isJoined]);
-
-    console.log("CTRNSSSS", constraints)
+        // Only run the fetch once NextAuth has finished checking the session
+        if (sessionStatus !== "loading") {
+            syncRoomState();
+        }
+    }, [roomId, session, sessionStatus]);
 
     const addIngredient = async () => {
         if (!input.trim()) return;
@@ -107,6 +127,16 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
         }
     };
 
+    // 5. Show a loading screen while resolving the Host's identity
+    if (isInitializing || sessionStatus === "loading") {
+        return (
+            <div className="mt-32 flex flex-col items-center justify-center text-stone-400">
+                <Loader2 className="animate-spin mb-4" size={32} />
+                <p className="text-sm font-bold tracking-widest uppercase animate-pulse">Entering Kitchen...</p>
+            </div>
+        );
+    }
+
     if (!isJoined) {
         return (
             <div className="mt-20 max-w-md mx-auto p-8 bg-white rounded-3xl shadow-xl border border-stone-100 text-center">
@@ -133,7 +163,7 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
     }
 
     if (view === "voting") {
-        return <VotingStage roomId={roomId} initialRecipes={recipeOptions} />;
+        return <VotingStage roomId={roomId} initialRecipes={recipeOptions} voterId={currentVoterId} isHost={isHost} />;
     }
 
     if (view === "cooking" && winningRecipe) {
@@ -146,13 +176,11 @@ export default function IngredientSection({ roomId }: { roomId: string }) {
 
     return (
         <div className="mt-8 max-w-lg mx-auto w-full px-4 pb-20">
-            {/* Header showing current user */}
             <div className="flex items-center gap-2 mb-6 text-stone-400 text-sm bg-stone-50 w-fit px-4 py-2 rounded-full mx-auto font-medium">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 Cooking as <span className="text-stone-800 font-bold">{userName}</span>
             </div>
 
-            {/* NEW: Kitchen Rules Banner */}
             {constraints && (
                 <div className="bg-orange-50/50 border border-orange-100 rounded-3xl p-5 mb-8 animate-in slide-in-from-top-4 duration-500">
                     <div className="flex items-center gap-2 mb-4">
