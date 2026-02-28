@@ -27,7 +27,8 @@ export async function GET(req: Request) {
             status: room.status,
             recipes: room.recipes || [],
             winner: room.winner || null,
-            constraints: room.constraints || null // Safely send the constraints
+            constraints: room.constraints || null, // Safely send the constraints
+            owner: room.owner
         }, { status: 200 });
 
     } catch (error: any) {
