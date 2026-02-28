@@ -6,8 +6,8 @@ import { connectToDatabase } from "@/lib/mongodb";
 
 export async function POST(req: Request) {
     try {
-        // 1. Get password and creator info from request
-        const { password, creatorEmail } = await req.json();
+        // 1. Extract constraints and creatorName along with password/email
+        const { password, creatorEmail, creatorName, constraints } = await req.json();
 
         // 2. Authentication Check (Future Proofing for Version 1.1)
         // const session = await getServerSession(); 
@@ -23,13 +23,17 @@ export async function POST(req: Request) {
         const roomId = generateRoomId();
         console.log("Creating Secured Room:", roomId);
 
-        // 3. Create room with password and owner details
-        // We use direct collection update to ensure 'password' field is saved 
-        // even if the Mongoose schema is still updating in the background.
+        // 3. Create room with ALL details, including constraints
         const newRoomData = {
             roomId,
-            password, // Guest will use this to join
-            owner: creatorEmail, // Track who created it
+            password,
+            owner: creatorEmail,
+            creatorName, // Saving this might be helpful later
+            constraints: {
+                dietary: constraints?.dietary || "None",
+                allergies: constraints?.allergies || "None",
+                timeLimit: constraints?.timeLimit || "30 mins"
+            },
             ingredients: [],
             recipes: [],
             status: "lobby",

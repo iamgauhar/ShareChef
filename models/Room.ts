@@ -5,6 +5,11 @@ const RoomSchema = new mongoose.Schema({
     password: { type: String, required: true },
     owner: { type: String, required: true },
     status: { type: String, default: "lobby" },
+    constraints: {
+        dietary: { type: String, default: "None" },
+        allergies: { type: String, default: "None" },
+        timeLimit: { type: String, default: "30 mins" }
+    },
     ingredients: [
         {
             name: String,
