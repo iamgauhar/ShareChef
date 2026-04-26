@@ -1,13 +1,19 @@
 @import "tailwindcss";
-@tailwind base;
-@tailwind components;
 @tailwind utilities;
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* You can keep any other custom CSS you have below these */
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -17,15 +23,33 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes theme-icon-pop {
+  0% {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.65);
+  }
+
+  60% {
+    opacity: 1;
+    transform: rotate(12deg) scale(1.12);
+  }
+
+  100% {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+.theme-toggle-icon {
+  animation: theme-icon-pop 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+button {
+  cursor: pointer !important;
 }
